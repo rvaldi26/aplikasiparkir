@@ -1,0 +1,364 @@
+Source Code VB Parking
+
+Imports System.Globalization
+Imports System.Runtime.InteropServices
+Imports Microsoft.Office.Interop.Excel
+Imports System.IO.Ports
+Imports System.Drawing.Printing
+Imports System.Security.Cryptography.X509Certificates
+Imports System.ComponentModel
+Imports System.Threading
+
+Public Class Form1
+    Dim serialPort As New SerialPort()
+    Dim WithEvents PD As New PrintDocument
+    Dim PPD As New PrintPreviewDialog
+    '-------------------------------------------------------------------------------------
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+
+        '------------------------------------------------
+        TextBox2.Text = DateTime.Now.ToString("HH:mm:ss")
+        TextBox3.Focus()
+        ComboBox2.Text = "UMUM"
+        Label11.Text = DateTime.Now.ToString("yyyy-MM-dd")
+        '----------------------------------
+        ' Mengisi ComboBox dengan daftar semua port COM yang tersedia
+        For Each portName As String In SerialPort.GetPortNames()
+            ComboBoxCOMPort.Items.Add(portName)
+        Next
+
+        If ComboBoxCOMPort.Items.Count > 0 Then
+            ComboBoxCOMPort.SelectedIndex = 0 ' Mengatur port COM default jika ada yang tersedia
+        End If
+
+        ' Inisialisasi pengaturan port COM
+        serialPort.BaudRate = 9600 ' Sesuaikan dengan baud rate perangkat Anda
+        serialPort.Parity = Parity.None
+        serialPort.DataBits = 8
+        serialPort.StopBits = StopBits.One
+    End Sub
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+
+        Dim teksButton7 As String = Button7.Text
+
+        If teksButton7 = "MOTOR" Then
+            Label10.Text = "3000"
+        ElseIf teksButton7 = "MOBIL" Then
+            Label10.Text = "5000"
+        Else
+            ' Tambahkan logika lain jika diperlukan
+        End If
+        '---------------------
+        Dim teksWaktu As String = TextBox4.Text
+        Dim formatWaktu As String = "HH:mm:ss"
+        Dim waktu As DateTime
+        If DateTime.TryParseExact(teksWaktu, formatWaktu, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal.None, waktu) Then
+            TextBox1.Text = waktu.ToString("HH:mm:ss")
+        Else
+            TextBox4.Text = "Format teks tidak valid"
+        End If
+        'program satu lagi
+
+        Dim teksWaktuAwal As String = TextBox1.Text
+        Dim teksWaktuAkhir As String = TextBox2.Text
+
+        ' Coba mengonversi teks waktu menjadi DateTime
+        Dim waktuAwal As DateTime
+        Dim waktuAkhir As DateTime
+
+        If DateTime.TryParse(teksWaktuAwal, waktuAwal) AndAlso DateTime.TryParse(teksWaktuAkhir, waktuAkhir) Then
+            ' Hitung durasi antara waktu awal dan waktu akhir
+            Dim durasi As TimeSpan = waktuAkhir - waktuAwal
+
+            ' Tampilkan durasi dalam menit, jam, dan detik di TextBox3
+            Label9.Text = String.Format("{0} jam {1} menit {2} detik", durasi.Hours, durasi.Minutes, durasi.Seconds)
+        Else
+            ' Jika format waktu tidak valid, beri tahu pengguna
+            Label9.Text = "Format waktu tidak valid."
+        End If
+
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        CheckBoxRelayOn.Checked = True
+        ButtonControlRelay.PerformClick()
+        ' Membuat instance Excel
+        Dim excelApp As New Application()
+        Dim workbook As Workbook
+        Dim worksheet As Worksheet
+
+
+
+        Try
+            ' Buka atau buat file Excel yang akan Anda gunakan
+            workbook = excelApp.Workbooks.Open("D:\Desktop\DATAPARKIR.xlsx")
+
+            ' Pilih worksheet di dalam workbook
+            Dim sheetPassword As String = "qwerty123"
+
+            worksheet = workbook.Sheets("DataKeluar") ' Ganti "Sheet1" sesuai dengan nama worksheet Anda
+
+            ' Unprotect worksheet dengan kata sandi
+            worksheet.Unprotect(sheetPassword)
+
+
+            ' Ambil nilai dari TextBox
+            Dim nilaiTextBox1 As String = TextBox3.Text 'plat nomer c3
+            Dim nilaiTextBox3 As String = TextBox1.Text 'check in d4
+            Dim nilaiTextBox2 As String = TextBox2.Text 'check out e5
+            Dim nilaiTextBox9 As String = Label9.Text 'durasi f6
+            Dim nilaiTextBox10 As String = ComboBox1.Text 'operator h8
+            Dim nilaiTextBox11 As String = Label10.Text 'harga g7
+            Dim nilaiTextBox12 As String = Label11.Text 'tanggal b2
+            Dim nilaiTextBox13 As String = ComboBox2.Text 'jenis i9
+
+            ' Cari baris terakhir yang kosong di kolom A
+            Dim barisTerakhirB As Integer = worksheet.Cells(worksheet.Rows.Count, 2).End(XlDirection.xlUp).Row + 1
+            Dim barisTerakhirC As Integer = worksheet.Cells(worksheet.Rows.Count, 3).End(XlDirection.xlUp).Row + 1
+            Dim barisTerakhirD As Integer = worksheet.Cells(worksheet.Rows.Count, 4).End(XlDirection.xlUp).Row + 1
+            Dim barisTerakhirE As Integer = worksheet.Cells(worksheet.Rows.Count, 5).End(XlDirection.xlUp).Row + 1
+            Dim barisTerakhirF As Integer = worksheet.Cells(worksheet.Rows.Count, 6).End(XlDirection.xlUp).Row + 1
+            Dim barisTerakhirG As Integer = worksheet.Cells(worksheet.Rows.Count, 7).End(XlDirection.xlUp).Row + 1
+            Dim barisTerakhirH As Integer = worksheet.Cells(worksheet.Rows.Count, 8).End(XlDirection.xlUp).Row + 1
+            Dim barisTerakhirI As Integer = worksheet.Cells(worksheet.Rows.Count, 9).End(XlDirection.xlUp).Row + 1
+            ' Menyimpan nilai dari TextBox1 ke kolom A di baris terakhir yang kosong
+
+            worksheet.Cells(barisTerakhirB, 2).Value = nilaiTextBox12
+            worksheet.Cells(barisTerakhirC, 3).Value = nilaiTextBox1
+            worksheet.Cells(barisTerakhirD, 4).Value = nilaiTextBox3
+            worksheet.Cells(barisTerakhirE, 5).Value = nilaiTextBox2
+            worksheet.Cells(barisTerakhirF, 6).Value = nilaiTextBox9
+            worksheet.Cells(barisTerakhirG, 7).Value = nilaiTextBox11
+            worksheet.Cells(barisTerakhirH, 8).Value = nilaiTextBox10
+            worksheet.Cells(barisTerakhirI, 9).Value = nilaiTextBox13
+
+            '---------------
+            Dim sheetPwd As String = "qwerty123"
+
+            ' Menyimpan workbook
+            workbook.Save()
+            If Not worksheet.ProtectContents Then
+                worksheet.Protect(sheetPwd)
+            End If
+            ' Menampilkan pesan sukses
+            MessageBox.Show("Data telah disimpan ke Excel.", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Catch ex As Exception
+            ' Menampilkan pesan kesalahan jika terjadi masalah
+            MessageBox.Show("Terjadi kesalahan: " & ex.Message, "Kesalahan", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Finally
+            Dim sheetPwd As String = "qwerty123"
+
+            ' Tutup workbook dan Excel
+            workbook.Close(SaveChanges:=True)
+            excelApp.Quit()
+
+
+            ' Membersihkan objek Excel
+            Marshal.ReleaseComObject(worksheet)
+            Marshal.ReleaseComObject(workbook)
+            Marshal.ReleaseComObject(excelApp)
+        End Try
+
+        ' batas ----------------------------------------------------
+        ' Ambil teks dari TextBox1, TextBox2, dan TextBox3
+        Dim teks1 As String = TextBox3.Text
+        Dim teks2 As String = Label9.Text
+        Dim teks3 As String = TextBox4.Text
+        Dim teks4 As String = Button7.Text
+        Dim teks5 As String = ComboBox1.Text
+
+        ' Gabungkan teks dari ketiga TextBox
+        Dim hasilGabungan As String = teks1 & " " & teks2 & " " & teks3 & " " & teks4 & " " & teks5
+
+        ' Tampilkan hasil gabungan di Label
+        Label15.Text = hasilGabungan
+
+        ' Pastikan TextBox1 dan TextBox2 berisi angka desimal yang valid
+        Dim input1 As Double
+        Dim input2 As Double
+
+        If Double.TryParse(Label10.Text, input1) AndAlso Double.TryParse(TextBox6.Text, input2) Then
+            ' Lakukan pengurangan
+            Dim hasil As Double = input2 - input1
+
+            ' Tampilkan hasil di Label1
+            Label12.Text = "Total Kembalian " & hasil.ToString()
+        Else
+            ' Jika input tidak valid, beri tahu pengguna
+            MessageBox.Show("Masukkan angka desimal yang valid di kedua TextBox.")
+        End If
+
+
+    End Sub
+
+    Private Sub TextBox3_KeyPress(sender As Object, e As KeyPressEventArgs) Handles TextBox3.KeyPress
+        If e.KeyChar = ChrW(Keys.Enter) Then
+            e.Handled = True ' Menghentikan karakter "Enter" agar tidak ditambahkan ke dalam TextBox1
+            TextBox4.Focus() ' Menggeser fokus ke TextBox2
+        End If
+    End Sub
+
+    Private Sub TextBox4_KeyPress(sender As Object, e As KeyPressEventArgs) Handles TextBox4.KeyPress
+        If e.KeyChar = ChrW(Keys.Enter) Then
+            e.Handled = True ' Menghentikan karakter "Enter" agar tidak ditambahkan ke dalam TextBox1
+            Button4.PerformClick()
+            TextBox6.Focus()
+            ButtonConnect.PerformClick()
+        End If
+    End Sub
+
+
+    Private Sub Form1_KeyPress(sender As Object, e As KeyPressEventArgs) Handles Me.KeyPress
+        If e.KeyChar = ChrW(Keys.Escape) Then
+            ' Menghapus semua inputan pada TextBox
+            TextBox3.Clear()
+            TextBox4.Clear()
+            TextBox1.Clear()
+            ' Mengosongkan Label
+            Label9.Text = ""
+            Label10.Text = ""
+            ButtonControlRelay.PerformClick()
+        End If
+    End Sub
+
+    Private Sub TextBox4_TextChanged(sender As Object, e As EventArgs) Handles TextBox4.TextChanged
+        Dim inputText As String = TextBox4.Text
+
+        ' Hapus karakter ":" jika ada
+        inputText = inputText.Replace(":", "")
+
+        ' Pastikan inputText hanya berisi digit (0-9)
+        If Not IsNumeric(inputText) Then
+            inputText = ""
+        End If
+
+        ' Format ulang inputText menjadi format waktu "HH:mm:ss"
+        If inputText.Length >= 2 Then
+            inputText = inputText.Insert(2, ":")
+        End If
+
+        If inputText.Length >= 5 Then
+            inputText = inputText.Insert(5, ":")
+        End If
+
+        ' Terapkan hasil ke TextBox
+        TextBox4.Text = inputText
+
+        ' Posisikan kursor di akhir teks
+        TextBox4.SelectionStart = TextBox4.Text.Length
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
+        CheckBoxRelayOn.Checked = False
+        ButtonControlRelay.PerformClick()
+        TextBox3.Clear()
+        TextBox4.Clear()
+        TextBox1.Clear()
+        TextBox6.Clear()
+        ' Mengosongkan Label
+        Label9.Text = ""
+        Label10.Text = ""
+        Label15.Text = ""
+        Label12.Text = ""
+    End Sub
+
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
+        Dim Formsettings As New Formsettings()
+        Formsettings.Show()
+    End Sub
+
+    Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
+        If Button7.Text = "MOBIL" Then
+            ' Jika tombol saat ini menampilkan "mobil", ubah ke "motor"
+            Button7.Text = "MOTOR"
+        Else
+            ' Jika tombol saat ini menampilkan "motor", ubah ke "mobil"
+            Button7.Text = "MOBIL"
+        End If
+    End Sub
+
+    Private Sub TextBox6_KeyPress(sender As Object, e As KeyPressEventArgs) Handles TextBox6.KeyPress
+        If e.KeyChar = ChrW(Keys.Enter) Then
+            e.Handled = True ' Menghentikan karakter "Enter" agar tidak ditambahkan ke dalam TextBox1
+            Button1.PerformClick()
+            Label15.Focus()
+        End If
+    End Sub
+
+    Private Sub Label15_KeyPress(sender As Object, e As KeyPressEventArgs) Handles Label15.KeyPress
+        If e.KeyChar = ChrW(Keys.Enter) Then
+            e.Handled = True ' Menghentikan karakter "Enter" agar tidak ditambahkan ke dalam TextBox1
+            Button5.PerformClick()
+            TextBox3.Focus()
+        End If
+    End Sub
+
+
+    Private Sub ButtonControlRelay_Click(sender As Object, e As EventArgs) Handles ButtonControlRelay.Click
+        Try
+            If serialPort.IsOpen Then
+                ' Mengirim perintah untuk mengendalikan relay
+                If CheckBoxRelayOn.Checked Then
+                    ' Mengaktifkan relay
+                    serialPort.Write("1") ' Gantilah dengan perintah yang sesuai dengan perangkat Anda
+                    ButtonControlRelay.Text = "ON" 'biasa on
+                Else
+                    ' Mematikan relay
+                    serialPort.Write("0") ' Gantilah dengan perintah yang sesuai dengan perangkat Anda
+                    ButtonControlRelay.Text = "OFF" 'biasa off
+                End If
+            Else
+                MessageBox.Show("Port COM belum terhubung. Silakan buka koneksi terlebih dahulu.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
+        Catch ex As Exception
+            MessageBox.Show("Gagal mengendalikan relay: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+    Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+        ' Pastikan untuk menutup port COM saat aplikasi ditutup
+        If serialPort.IsOpen Then
+            serialPort.Close()
+        End If
+    End Sub
+
+    Private Sub ButtonConnect_Click(sender As Object, e As EventArgs) Handles ButtonConnect.Click
+        Try
+            ' Membuka koneksi ke port COM yang dipilih
+            serialPort.PortName = ComboBoxCOMPort.SelectedItem.ToString()
+            serialPort.Open()
+            'MessageBox.Show("Koneksi berhasil dibuka ke " & serialPort.PortName, "Info", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Catch ex As Exception
+            MessageBox.Show("Koneksi gagal dibuka: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    Private Sub ButtonCetak_Click(sender As Object, e As EventArgs) Handles ButtonCetak.Click
+        PPD.Document = PD
+        PPD.ShowDialog()
+        PD.Print()
+    End Sub
+
+    Private Sub PD_PrintPage(sender As Object, e As PrintPageEventArgs) Handles PD.PrintPage
+
+    End Sub
+
+    Private Sub PD_BeginPrint(sender As Object, e As PrintEventArgs) Handles PD.BeginPrint
+        Dim pagesetup As New PageSettings
+        pagesetup.PaperSize = New PaperSize("Custom", 250, 500)
+        PD.DefaultPageSettings = pagesetup
+    End Sub
+
+    Private Sub CheckBoxRelayOn_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBoxRelayOn.CheckedChanged
+
+    End Sub
+
+
+End Class
+
+Namespace Microsoft.Office
+    Class Interop
+    End Class
+End Namespace
+
+
